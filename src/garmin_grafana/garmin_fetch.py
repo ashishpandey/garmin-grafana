@@ -14,11 +14,6 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-from garmin_personal_api import (
-    GarminPersonalApiClient,
-    PersonalApiAuthenticator,
-    resolve_api_key,
-)
 from .garmin_official_api import garmin_official_login
 garmin_obj = None
 banner_text = """
@@ -86,9 +81,7 @@ for handler in logging.root.handlers[:]:
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 
 # %%
@@ -121,7 +114,7 @@ try:
     'tags': {'DemoTag': 'DemoTagValue'},
     'fields': {'DemoField': 0}
      }
-    # The following code block tests the connection by writing/overwriting a demo point. raises error and aborts if connection fails. 
+    # The following code block tests the connection by writing/overwriting a demo point. raises error and aborts if connection fails.
     if INFLUXDB_VERSION == '1':
         influxdbclient.write_points([demo_point])
     else:
@@ -143,6 +136,16 @@ def iter_days(start_date: str, end_date: str):
 
 # %%
 def garmin_login():
+    GARMIN_API_PROVIDER = os.getenv("GARMIN_API_PROVIDER", "garminconnect").strip().lower()
+    if GARMIN_API_PROVIDER == "official":
+        logging.info("Using Garmin Connect official Personal API provider")
+        return garmin_official_login()
+    if GARMIN_API_PROVIDER != "garminconnect":
+        raise ValueError(
+            f"Unsupported GARMIN_API_PROVIDER '{GARMIN_API_PROVIDER}'. "
+            "Expected 'garminconnect' or 'official'."
+        )
+
     token_store_expanded = os.path.expanduser(TOKEN_DIR)
     token_store = token_store_expanded
     if os.path.isfile(token_store_expanded) and (not token_store_expanded.endswith('.json')):
@@ -187,7 +190,7 @@ def garmin_login():
 
     return garmin
 
-
+# %%
 def _is_http_status_error(err, status_code):
     """Best-effort status matching for wrapped Garmin errors in different module versions."""
     if hasattr(err, "response") and getattr(err.response, "status_code", None) == status_code:

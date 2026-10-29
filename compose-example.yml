@@ -17,6 +17,10 @@ services:
       - INFLUXDB_PASSWORD=influxdb_secret_password # (Required for influxdb 1.x, ignore for influxdb 3.x - set the 3.x specific variables)
       - INFLUXDB_DATABASE=GarminStats
       - GARMINCONNECT_IS_CN=False # Set this to True if you are in mainland China or use Garmin-cn (Default False)
+      # - GARMIN_API_PROVIDER=official # Set to 'official' to use the Garmin Connect Personal API instead of garminconnect
+      # - GARMIN_PERSONAL_API_KEY=your_official_garmin_personal_api_key
+      # - GARMIN_PERSONAL_API_KEY_FILE=/config/garmin-personal-api-key
+      # - GARMIN_PERSONAL_API_BEARER_CACHE=/home/appuser/.garminconnect-personal-api/bearer-token.json
       #####################################################################################
       # - GARMINCONNECT_EMAIL=your_garminconnect_email # optional, read the setup docs. (remove or comment out this line altogether if not used)
       # - GARMINCONNECT_BASE64_PASSWORD=your_base64_encoded_garminconnect_password # optional, must be Base64 encoded, read setup docs. (remove or comment out this line altogether if not used)

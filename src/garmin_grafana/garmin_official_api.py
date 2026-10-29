@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+import zipfile
 from datetime import date
+from enum import Enum
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +20,12 @@ from garmin_personal_api import (
 
 class UnsupportedOfficialApiOperation(RuntimeError):
     """Raised when Garmin does not expose an operation in the Personal API."""
+
+
+class OfficialActivityDownloadFormat(Enum):
+    ORIGINAL = "original"
+    FIT = "fit"
+    TCX = "tcx"
 
 
 class OfficialGarminApiAdapter:
@@ -35,6 +44,7 @@ class OfficialGarminApiAdapter:
         self._authenticator = PersonalApiAuthenticator(**auth_kwargs)
         token = self._authenticator.obtain_token(api_key)
         self._client = GarminPersonalApiClient(token.access_token)
+        self.ActivityDownloadFormat = OfficialActivityDownloadFormat
         self.display_name = self._profile_value("displayName")
 
     def close(self) -> None:
@@ -115,7 +125,21 @@ class OfficialGarminApiAdapter:
         return self._client.get_activity_workouts(activity_id)
 
     def download_activity(self, activity_id: Any, dl_fmt: Any = None) -> bytes:
-        return self._client.download_activity(activity_id)
+        zip_data = self._client.download_activity(activity_id)
+        if dl_fmt == OfficialActivityDownloadFormat.TCX:
+            with zipfile.ZipFile(BytesIO(zip_data)) as archive:
+                tcx_names = [name for name in archive.namelist() if name.lower().endswith(".tcx")]
+                fit_names = [name for name in archive.namelist() if name.lower().endswith(".fit")]
+                if tcx_names:
+                    return archive.read(tcx_names[0])
+                if fit_names:
+                    raise UnsupportedOfficialApiOperation(
+                        "The official activity ZIP contains FIT data but no TCX export"
+                    )
+                raise UnsupportedOfficialApiOperation(
+                    "The official activity ZIP contains no TCX file"
+                )
+        return zip_data
 
     def connectapi(self, path: str, params: dict[str, Any] | None = None, method: str = "GET", **_: Any) -> Any:
         if method.upper() != "GET":
