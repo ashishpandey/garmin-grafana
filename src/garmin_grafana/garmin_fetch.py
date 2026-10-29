@@ -14,6 +14,12 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
+from garmin_personal_api import (
+    GarminPersonalApiClient,
+    PersonalApiAuthenticator,
+    resolve_api_key,
+)
+from .garmin_official_api import garmin_official_login
 garmin_obj = None
 banner_text = """
 
